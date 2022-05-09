@@ -1,7 +1,7 @@
+import sys
 from PacketInterceptor import PacketInterceptor
 
-def main():
-    PacketInterceptor()
+packetInterceptor = PacketInterceptor()
 
 if __name__ == "__main__":
-    main()
+    packetInterceptor.run()

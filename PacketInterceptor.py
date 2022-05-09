@@ -1,20 +1,24 @@
 from struct import pack
-from scapy.all import sniff, Raw, IP, ICMP
+from scapy.all import AsyncSniffer, sniff, Raw, IP, ICMP
 from CustomDataWrapper import Buffer
-import socketio
+import sys
 
 class PacketInterceptor:
     def __init__(self):
-        self.sio = socketio.Client()
-        self.sio.connect('http://localhost:3000')
         self.lastPacket = None
         self.buffer = Buffer()
-        sniff(
-            filter='tcp src port 5555',
+        self.sniffer = sniff(
+            filter="tcp src port 5555",
             lfilter = lambda packet: packet.haslayer(Raw),
             prn = lambda packet: self.receive(packet)
         )
     
+    def run(self):
+        self.sniffer.start()
+
+    def stop(self):
+        self.sniffer.stop()
+
     def receive(self, packet):
         if self.lastPacket and packet.getlayer(IP).src != self.lastPacket.getlayer(IP).src:
             self.lastPacket = None
@@ -24,7 +28,5 @@ class PacketInterceptor:
             self.buffer = Buffer()
             self.buffer += bytes(packet.getlayer(Raw))
         self.lastPacket = packet
-        self.sio.emit('data', {
-            'data': self.buffer.data.hex()
-        })
         print(self.buffer.data.hex())
+        sys.stdout.flush()
